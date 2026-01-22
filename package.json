@@ -1,0 +1,14 @@
+{
+  "name": "astro-product-assembly",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^4.16.0",
+    "three": "^0.169.0"
+  }
+}
