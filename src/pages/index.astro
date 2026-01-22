@@ -19,12 +19,7 @@ import "../styles/global.css";
             Ein minimalistisches Produkt-Storytelling mit einem 3D-Modell, das sich zu einer
             klaren, leistungsfähigen Einheit zusammenfügt.
           </p>
-          <canvas
-            id="hero-canvas"
-            aria-label="3D-Modell in zusammengebautem Zustand"
-            width="1200"
-            height="600"
-          ></canvas>
+          <canvas id="hero-canvas" aria-label="3D-Modell in zusammengebautem Zustand"></canvas>
         </div>
       </section>
 
@@ -37,12 +32,7 @@ import "../styles/global.css";
       <section class="assembly-section" id="assembly">
         <div class="assembly-layout">
           <div class="assembly-canvas">
-            <canvas
-              id="assembly-canvas"
-              aria-label="3D-Produktmontage"
-              width="1200"
-              height="700"
-            ></canvas>
+            <canvas id="assembly-canvas" aria-label="3D-Produktmontage"></canvas>
           </div>
           <div class="steps">
             <div class="step" data-step="cpu">
@@ -92,16 +82,12 @@ import "../styles/global.css";
           alpha: true
         });
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.outputColorSpace = THREE.SRGBColorSpace;
-        renderer.setClearColor(0x000000, 0);
 
         const controls = new OrbitControls(camera, canvas);
         controls.enableDamping = true;
         controls.enablePan = false;
         controls.minDistance = 4;
         controls.maxDistance = 9;
-        controls.target.set(0, 0.4, 0);
-        controls.update();
 
         const ambient = new THREE.AmbientLight(0xffffff, 0.8);
         const key = new THREE.DirectionalLight(0xffffff, 0.9);
@@ -185,73 +171,62 @@ import "../styles/global.css";
       };
 
       const resizeRenderer = (renderer, camera, canvas) => {
-        const rect = canvas.getBoundingClientRect();
-        const width = Math.max(rect.width, 320);
-        const height = Math.max(rect.height, 240);
+        const { width, height } = canvas.getBoundingClientRect();
         renderer.setSize(width, height, false);
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
       };
 
-      const startScenes = () => {
-        const heroCanvas = document.getElementById("hero-canvas");
-        const assemblyCanvas = document.getElementById("assembly-canvas");
-        if (!heroCanvas || !assemblyCanvas) return;
+      const heroCanvas = document.getElementById("hero-canvas");
+      const assemblyCanvas = document.getElementById("assembly-canvas");
+      const heroScene = createScene(heroCanvas, { assembled: true });
+      const assemblyScene = createScene(assemblyCanvas, { assembled: false });
 
-        const heroScene = createScene(heroCanvas, { assembled: true });
-        const assemblyScene = createScene(assemblyCanvas, { assembled: false });
+      const updateAssembly = (progress) => {
+        const { cpu, heatsink, screws } = assemblyScene.parts;
+        const { exploded, assembled } = assemblyScene.positions;
 
-        const updateAssembly = (progress) => {
-          const { cpu, heatsink, screws } = assemblyScene.parts;
-          const { exploded, assembled } = assemblyScene.positions;
+        const cpuProgress = THREE.MathUtils.clamp(progress / 0.34, 0, 1);
+        const heatsinkProgress = THREE.MathUtils.clamp((progress - 0.34) / 0.33, 0, 1);
+        const screwsProgress = THREE.MathUtils.clamp((progress - 0.67) / 0.33, 0, 1);
 
-          const cpuProgress = THREE.MathUtils.clamp(progress / 0.34, 0, 1);
-          const heatsinkProgress = THREE.MathUtils.clamp((progress - 0.34) / 0.33, 0, 1);
-          const screwsProgress = THREE.MathUtils.clamp((progress - 0.67) / 0.33, 0, 1);
+        cpu.position.lerpVectors(exploded.cpu, assembled.cpu, cpuProgress);
+        heatsink.position.lerpVectors(exploded.heatsink, assembled.heatsink, heatsinkProgress);
+        screws.position.lerpVectors(exploded.screws, assembled.screws, screwsProgress);
+      };
 
-          cpu.position.lerpVectors(exploded.cpu, assembled.cpu, cpuProgress);
-          heatsink.position.lerpVectors(exploded.heatsink, assembled.heatsink, heatsinkProgress);
-          screws.position.lerpVectors(exploded.screws, assembled.screws, screwsProgress);
-        };
+      const getScrollProgress = () => {
+        const section = document.getElementById("assembly");
+        if (!section) return 0;
+        const rect = section.getBoundingClientRect();
+        const viewport = window.innerHeight;
+        const start = viewport * 0.2;
+        const end = viewport * 1.4;
+        const raw = (start - rect.top) / (end - start);
+        return THREE.MathUtils.clamp(raw, 0, 1);
+      };
 
-        const getScrollProgress = () => {
-          const section = document.getElementById("assembly");
-          if (!section) return 0;
-          const rect = section.getBoundingClientRect();
-          const viewport = window.innerHeight;
-          const start = viewport * 0.2;
-          const end = viewport * 1.4;
-          const raw = (start - rect.top) / (end - start);
-          return THREE.MathUtils.clamp(raw, 0, 1);
-        };
+      const animate = () => {
+        requestAnimationFrame(animate);
+        heroScene.controls.update();
+        assemblyScene.controls.update();
+
+        const progress = getScrollProgress();
+        updateAssembly(progress);
 
         resizeRenderer(heroScene.renderer, heroScene.camera, heroCanvas);
         resizeRenderer(assemblyScene.renderer, assemblyScene.camera, assemblyCanvas);
 
-        const animate = () => {
-          requestAnimationFrame(animate);
-          heroScene.controls.update();
-          assemblyScene.controls.update();
-
-          const progress = getScrollProgress();
-          updateAssembly(progress);
-
-          resizeRenderer(heroScene.renderer, heroScene.camera, heroCanvas);
-          resizeRenderer(assemblyScene.renderer, assemblyScene.camera, assemblyCanvas);
-
-          heroScene.renderer.render(heroScene.scene, heroScene.camera);
-          assemblyScene.renderer.render(assemblyScene.scene, assemblyScene.camera);
-        };
-
-        animate();
-
-        window.addEventListener("resize", () => {
-          resizeRenderer(heroScene.renderer, heroScene.camera, heroCanvas);
-          resizeRenderer(assemblyScene.renderer, assemblyScene.camera, assemblyCanvas);
-        });
+        heroScene.renderer.render(heroScene.scene, heroScene.camera);
+        assemblyScene.renderer.render(assemblyScene.scene, assemblyScene.camera);
       };
 
-      window.addEventListener("load", startScenes);
+      animate();
+
+      window.addEventListener("resize", () => {
+        resizeRenderer(heroScene.renderer, heroScene.camera, heroCanvas);
+        resizeRenderer(assemblyScene.renderer, assemblyScene.camera, assemblyCanvas);
+      });
     </script>
   </body>
 </html>
