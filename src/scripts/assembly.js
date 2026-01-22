@@ -1,0 +1,180 @@
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+
+const createScene = (canvas, { assembled = false } = {}) => {
+  const scene = new THREE.Scene();
+  scene.background = null;
+
+  const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+  camera.position.set(4.2, 3.6, 6.2);
+
+  const renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: true,
+    alpha: true
+  });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.setClearColor(0x000000, 0);
+
+  const controls = new OrbitControls(camera, canvas);
+  controls.enableDamping = true;
+  controls.enablePan = false;
+  controls.minDistance = 4;
+  controls.maxDistance = 9;
+  controls.target.set(0, 0.4, 0);
+  controls.update();
+
+  const ambient = new THREE.AmbientLight(0xffffff, 0.8);
+  const key = new THREE.DirectionalLight(0xffffff, 0.9);
+  key.position.set(6, 8, 4);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.4);
+  fill.position.set(-4, 3, -2);
+  scene.add(ambient, key, fill);
+
+  const group = new THREE.Group();
+  scene.add(group);
+
+  const board = new THREE.Mesh(
+    new THREE.BoxGeometry(4, 0.2, 3),
+    new THREE.MeshStandardMaterial({ color: 0x2c2f3a, roughness: 0.4, metalness: 0.3 })
+  );
+  board.position.set(0, 0, 0);
+
+  const cpu = new THREE.Mesh(
+    new THREE.BoxGeometry(1.6, 0.3, 1.6),
+    new THREE.MeshStandardMaterial({ color: 0xced4df, roughness: 0.25, metalness: 0.8 })
+  );
+
+  const heatsink = new THREE.Mesh(
+    new THREE.BoxGeometry(2.2, 0.6, 2.2),
+    new THREE.MeshStandardMaterial({ color: 0xb9c1cb, roughness: 0.2, metalness: 0.6 })
+  );
+
+  const screwMaterial = new THREE.MeshStandardMaterial({
+    color: 0x8a909a,
+    roughness: 0.3,
+    metalness: 0.7
+  });
+
+  const screws = new THREE.Group();
+  const screwOffsets = [
+    [1.3, 0.4, 1.1],
+    [-1.3, 0.4, 1.1],
+    [1.3, 0.4, -1.1],
+    [-1.3, 0.4, -1.1]
+  ];
+  screwOffsets.forEach(([x, y, z]) => {
+    const screw = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.4, 24), screwMaterial);
+    screw.rotation.x = Math.PI / 2;
+    screw.position.set(x, y, z);
+    screws.add(screw);
+  });
+
+  group.add(board, cpu, heatsink, screws);
+
+  const exploded = {
+    cpu: new THREE.Vector3(0, 2.6, 0),
+    heatsink: new THREE.Vector3(0, 3.4, 0),
+    screws: new THREE.Vector3(0, 2.8, 0)
+  };
+
+  const assembledPositions = {
+    cpu: new THREE.Vector3(0, 0.35, 0),
+    heatsink: new THREE.Vector3(0, 0.85, 0),
+    screws: new THREE.Vector3(0, 0.65, 0)
+  };
+
+  if (assembled) {
+    cpu.position.copy(assembledPositions.cpu);
+    heatsink.position.copy(assembledPositions.heatsink);
+    screws.position.copy(assembledPositions.screws);
+  } else {
+    cpu.position.copy(exploded.cpu);
+    heatsink.position.copy(exploded.heatsink);
+    screws.position.copy(exploded.screws);
+  }
+
+  return {
+    scene,
+    camera,
+    renderer,
+    controls,
+    group,
+    parts: { cpu, heatsink, screws },
+    positions: { exploded, assembled: assembledPositions }
+  };
+};
+
+const resizeRenderer = (renderer, camera, canvas) => {
+  const rect = canvas.getBoundingClientRect();
+  const width = Math.max(rect.width, 320);
+  const height = Math.max(rect.height, 240);
+  renderer.setSize(width, height, false);
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+};
+
+const startScenes = () => {
+  const heroCanvas = document.getElementById("hero-canvas");
+  const assemblyCanvas = document.getElementById("assembly-canvas");
+  if (!heroCanvas || !assemblyCanvas) return;
+
+  const heroScene = createScene(heroCanvas, { assembled: true });
+  const assemblyScene = createScene(assemblyCanvas, { assembled: false });
+
+  const updateAssembly = (progress) => {
+    const { cpu, heatsink, screws } = assemblyScene.parts;
+    const { exploded, assembled } = assemblyScene.positions;
+
+    const cpuProgress = THREE.MathUtils.clamp(progress / 0.34, 0, 1);
+    const heatsinkProgress = THREE.MathUtils.clamp((progress - 0.34) / 0.33, 0, 1);
+    const screwsProgress = THREE.MathUtils.clamp((progress - 0.67) / 0.33, 0, 1);
+
+    cpu.position.lerpVectors(exploded.cpu, assembled.cpu, cpuProgress);
+    heatsink.position.lerpVectors(exploded.heatsink, assembled.heatsink, heatsinkProgress);
+    screws.position.lerpVectors(exploded.screws, assembled.screws, screwsProgress);
+  };
+
+  const getScrollProgress = () => {
+    const section = document.getElementById("assembly");
+    if (!section) return 0;
+    const rect = section.getBoundingClientRect();
+    const viewport = window.innerHeight;
+    const start = viewport * 0.2;
+    const end = viewport * 1.4;
+    const raw = (start - rect.top) / (end - start);
+    return THREE.MathUtils.clamp(raw, 0, 1);
+  };
+
+  resizeRenderer(heroScene.renderer, heroScene.camera, heroCanvas);
+  resizeRenderer(assemblyScene.renderer, assemblyScene.camera, assemblyCanvas);
+
+  const animate = () => {
+    requestAnimationFrame(animate);
+    heroScene.controls.update();
+    assemblyScene.controls.update();
+
+    const progress = getScrollProgress();
+    updateAssembly(progress);
+
+    resizeRenderer(heroScene.renderer, heroScene.camera, heroCanvas);
+    resizeRenderer(assemblyScene.renderer, assemblyScene.camera, assemblyCanvas);
+
+    heroScene.renderer.render(heroScene.scene, heroScene.camera);
+    assemblyScene.renderer.render(assemblyScene.scene, assemblyScene.camera);
+  };
+
+  animate();
+
+  window.addEventListener("resize", () => {
+    resizeRenderer(heroScene.renderer, heroScene.camera, heroCanvas);
+    resizeRenderer(assemblyScene.renderer, assemblyScene.camera, assemblyCanvas);
+  });
+};
+
+if (document.readyState === "loading") {
+  window.addEventListener("DOMContentLoaded", startScenes);
+} else {
+  startScenes();
+}

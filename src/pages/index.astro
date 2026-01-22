@@ -1,0 +1,140 @@
+---
+import "../styles/global.css";
+---
+
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Linea One — Produktbau in 3D</title>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <div class="hero-inner">
+          <p>Linea One · Modularer Desktop</p>
+          <h1>Ein präziser Aufbau, Schicht für Schicht.</h1>
+          <p>
+            Ein minimalistisches Produkt-Storytelling mit einem 3D-Modell, das sich zu einer
+            klaren, leistungsfähigen Einheit zusammenfügt.
+          </p>
+          <canvas
+            id="hero-canvas"
+            aria-label="3D-Modell in zusammengebautem Zustand"
+            width="1200"
+            height="600"
+          ></canvas>
+        </div>
+      </section>
+
+      <div class="intro-strip">
+        <span>Aluminium-Chassis</span>
+        <span>Thermische Optimierung</span>
+        <span>Präzise Verschraubung</span>
+      </div>
+
+      <section class="assembly-section" id="assembly">
+        <div class="assembly-layout">
+          <div class="assembly-canvas">
+            <canvas
+              id="assembly-canvas"
+              aria-label="3D-Produktmontage"
+              width="1200"
+              height="700"
+            ></canvas>
+          </div>
+          <div class="steps">
+            <div class="step" data-step="cpu">
+              <h3>1. Prozessor trifft Platine</h3>
+              <p>
+                Der zentrale Chip gleitet auf die Hauptplatine, ausgerichtet auf maximale
+                Effizienz und kurze Signalwege.
+              </p>
+            </div>
+            <div class="step" data-step="heatsink">
+              <h3>2. Heatsink für ruhige Power</h3>
+              <p>
+                Ein massiver Kühlkörper legt sich darüber, um Wärme leise und gleichmäßig
+                abzuführen.
+              </p>
+            </div>
+            <div class="step" data-step="screws">
+              <h3>3. Präzise Verschraubung</h3>
+              <p>
+                Vier Schrauben fixieren die Baugruppe. Jedes Detail sitzt fest, ohne die
+                klare Silhouette zu stören.
+              </p>
+            </div>
+            <div class="step" data-step="frame">
+              <h3>4. Rahmen aus einem Guss</h3>
+              <p>
+                Das gefräste Chassis umschließt die Komponenten, reduziert Vibrationen und
+                hält die Linienführung ruhig.
+              </p>
+            </div>
+            <div class="step" data-step="finish">
+              <h3>5. Abschluss &amp; Finish</h3>
+              <p>
+                Eine satinierte Oberfläche versiegelt den Aufbau und macht die Technik zu
+                einem klaren Statement auf dem Schreibtisch.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="feature-section">
+        <div class="feature-grid">
+          <div>
+            <h2 class="section-title">Leistung, die leise bleibt.</h2>
+            <p class="section-copy">
+              Linea One verteilt Wärme über massive Metallflächen, damit die Kühlung diskret
+              bleibt und der Fokus auf der Arbeit liegt.
+            </p>
+          </div>
+          <div class="feature-card">
+            <h3>Thermal Flow</h3>
+            <p>Mehrschichtige Kühlkanäle führen Luft kontrolliert durch das Innere.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Clean I/O</h3>
+            <p>Alle Anschlüsse liegen bündig, damit das Setup aufgeräumt wirkt.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section">
+        <div class="detail-grid">
+          <div>
+            <h2 class="section-title">Material trifft Präzision.</h2>
+            <p class="section-copy">
+              Eine Mischung aus Aluminium, Keramik und fein gebürstetem Stahl sorgt für den
+              typischen, ruhigen Look und eine solide Haptik.
+            </p>
+          </div>
+          <div class="detail-list">
+            <div>
+              <strong>0,3 mm</strong>
+              <span>Spaltmaß im Gehäuse</span>
+            </div>
+            <div>
+              <strong>90%</strong>
+              <span>Recyceltes Aluminium</span>
+            </div>
+            <div>
+              <strong>12 dB</strong>
+              <span>Maximale Geräuschkulisse</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="footer">
+        <p>Mehr Minimalismus. Mehr Fokus. Linea One.</p>
+      </section>
+    </main>
+
+    <script type="module" src={Astro.resolve("../scripts/assembly.js")}></script>
+  </body>
+</html>
